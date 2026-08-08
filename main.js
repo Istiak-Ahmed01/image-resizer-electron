@@ -3,14 +3,15 @@ const os=require('os')
 const fs=require('fs')
 const resizeImg=require('resize-img')
 
-const { app, BrowserWindow,Menu,ipcMain } = require('electron')
+const { app, BrowserWindow,Menu,ipcMain,shell } = require('electron')
 
 const isDev = process.env.NODE_ENV !== 'production'
 const isMac = process.platform==="darwin"
 
+let mainWindow
 //create main window
 function createMainWindow(){
-    const mainWindow= new BrowserWindow({
+     mainWindow= new BrowserWindow({
         title:'Image Resizer',
         width: isDev? 1000:500,
         height: 600,
@@ -50,6 +51,9 @@ app.whenReady().then(() => {
     //Implement menu
     const mainMenu = Menu.buildFromTemplate(menu)
     Menu.setApplicationMenu(mainMenu)
+
+    //Remove mainWindow from memory on close
+    mainWindow.on('closed', () => (mainWindow = null))
 
      app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -105,6 +109,15 @@ async function resizeImage({imgPath,width,height,dest}){
     if(!fs.existsSync(dest)){
       fs.mkdirSync(dest)
     }
+
+    //Write the file to dest
+    fs.writeFileSync(path.join(dest,filename),newPath)
+
+    //Send success to renderer
+    mainWindow.webContents.send('image:done')
+
+    //Open the dest folder
+    shell.openPath(dest)
   }catch(error){
     console.log(error)
 
