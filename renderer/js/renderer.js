@@ -13,7 +13,7 @@ function loadImage(e){
 
     if(!isFileImage(file)){
         alertError('Please select an image');
-        return
+        return;
     }
 
     //Get original dimensions
@@ -27,7 +27,7 @@ function loadImage(e){
     
     form.style.display = 'block';
     filename.innerText = file.name;
-    outputPath.innerText = path.join(os.homedir(), 'imageresizer');
+    outputPath.innerText = window.path.join(window.os.homeDir(), 'imageresizer');
 }
 
 //Send image to main
@@ -36,16 +36,25 @@ function sendImage(e){
 
     const width = widthInput.value;
     const height = heightInput.value;
+    const imgPath =img.files[0].path
 
     if(!img.files[0]){
         alertError('Please upload an image');
-        return
+        return;
     }
 
     if(width === '' || height === ''){
         alertError('Please enter width and height');
-        return
+        return;
     }
+
+    //Send to me using ipcRenderer
+    ipcRenderer.send('image:resize',{
+        imgPath,
+        width,
+        height
+    })
+
 }
 
 // Make sure file is image
@@ -55,7 +64,7 @@ function isFileImage(file){
 }
 
 function alertError(message){
-    Toastify.toast({
+    window.Toastify.toast({
         text: message,
         duration: 5000,
         close: false,
@@ -68,7 +77,7 @@ function alertError(message){
 }
 
 function alertSuccess(message){
-    Toastify.toast({
+    window.Toastify.toast({
         text: message,
         duration: 5000,
         close: false,
@@ -81,4 +90,4 @@ function alertSuccess(message){
 }
 
 img.addEventListener('change', loadImage);
-from.addEventListener('submit', sendImage);
+form.addEventListener('submit', sendImage);
