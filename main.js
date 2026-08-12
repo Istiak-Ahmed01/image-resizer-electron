@@ -12,7 +12,7 @@ let mainWindow
 //create main window
 function createMainWindow(){
      mainWindow= new BrowserWindow({
-        title:'Image Resizer',
+        title:'PixelForge',
         width: isDev? 1000:500,
         height: 600,
         webPreferences:{
@@ -88,39 +88,47 @@ const menu = [
 ]
 
 //Respond to ipcRenderer resize
-ipcMain.on('image:resize',(e,options) => {
-  options.dest = path.join(os.homedir(),'imageresizer')
-  resizeImage(options)
+ipcMain.on('image:resize', (e, options) => {
+  if (!options || !options.imgPath) {
+    console.log('No image path received for resize.');
+    return;
+  }
+
+  options.dest = path.join(os.homedir(), 'imageresizer');
+  resizeImage(options);
 })
 
 //Resize the image
-async function resizeImage({imgPath,width,height,dest}){
-  try{
-    const newPath = await resizeImg(fs.readFileSync(imgPath),{
-      width: +width,
-      height: +height
-    })
+async function resizeImage({ imgPath, width, height, dest }){
+  try {
+    if (!imgPath || !fs.existsSync(imgPath)) {
+      console.log('Image file not found:', imgPath);
+      return;
+    }
 
+    const newPath = await resizeImg(fs.readFileSync(imgPath), {
+      width: Number(width),
+      height: Number(height)
+    });
 
     //Create filename
-    const filename = path.basename(imgPath)
+    const filename = path.basename(imgPath);
 
     //Create dest folder if not exist
-    if(!fs.existsSync(dest)){
-      fs.mkdirSync(dest)
+    if (!fs.existsSync(dest)) {
+      fs.mkdirSync(dest, { recursive: true });
     }
 
     //Write the file to dest
-    fs.writeFileSync(path.join(dest,filename),newPath)
+    fs.writeFileSync(path.join(dest, filename), newPath);
 
     //Send success to renderer
-    mainWindow.webContents.send('image:done')
+    mainWindow.webContents.send('image:done');
 
     //Open the dest folder
-    shell.openPath(dest)
-  }catch(error){
-    console.log(error)
-
+    shell.openPath(dest);
+  } catch (error) {
+    console.log(error);
   }
 }
 
